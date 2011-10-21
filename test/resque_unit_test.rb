@@ -457,6 +457,23 @@ class ResqueUnitTest < Test::Unit::TestCase
     end
   end
 
+  context "A job that tries to update one of its arguments" do
+    should "raise a RuntimeError" do
+      Resque.enqueue(JobThatTriesToChangeAJobArg, {})
+      assert_raise(RuntimeError) do
+        Resque.run_for!(Resque.queue_for(JobThatTriesToChangeAJobArg))
+      end
+    end
+    should "raise a RuntimeError complaining about a frozen object" do
+      Resque.enqueue(JobThatTriesToChangeAJobArg, {})
+      begin
+        Resque.run_for!(Resque.queue_for(JobThatTriesToChangeAJobArg))
+      rescue RuntimeError => rt
+        assert_match /frozen/, rt.message
+      end
+    end
+  end
+
   context "A plugin using Redis" do
     should "use an instance of MockRedis" do
       assert_instance_of MockRedis, Resque.redis

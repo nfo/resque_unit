@@ -104,6 +104,16 @@ module Resque
   def exec_payloads(raw_payloads)
     raw_payloads.each do |raw_payload|
       job_payload = decode(raw_payload)
+      
+      # Freeze the job arguments, to ensure that they are not updated.
+      # It is problematic for resque-batched-job, as it encodes job args in JSON to know how many jobs
+      # remain in the batch. Updating the job args changes the JSON string and thus resque-batched-job
+      # doesn't remove the current job from the batch.
+      # If one wants to update an argument before queueing it to another job, then one must call the `dup`
+      # method. The new object is a clone and is unfrozen. The origin job arguments stored in Resque::Job
+      # remains the same.
+      job_payload["args"].map(&:freeze)
+      
       @hooks_enabled ? perform_with_hooks(job_payload) : perform_without_hooks(job_payload)
     end
   end

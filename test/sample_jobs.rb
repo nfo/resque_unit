@@ -165,3 +165,10 @@ class JobWithHooksWithoutAround
     markers[:before] = true
   end
 end
+
+class JobThatTriesToChangeAJobArg
+  @queue = :tries_to_change_a_job_arg
+  def self.perform(hash)
+    hash['lol'] = 'cats'
+  end
+end
